@@ -1,0 +1,7 @@
+{
+  "name": "Tarix by Muhammad Ayubxon",
+  "description": "Tarix by Muhammad Ayubxon - Zamonaviy va qulay tarix fanini o'rganish platformasi. Darsliklar, testlar va mustahkam bilim.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
