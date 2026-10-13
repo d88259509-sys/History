@@ -9,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isTeacher: boolean;
   isStudent: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   register: (data: {
     name: string;
     email: string;
@@ -17,7 +17,7 @@ interface AuthContextType {
     role: 'teacher' | 'student';
     teacherCode?: string;
     preferredLanguage?: Language;
-  }) => Promise<{ success: boolean; error?: string }>;
+  }) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
   updateProfile: (name: string, preferredLanguage: Language) => Promise<{ success: boolean; error?: string }>;
   refreshUser: () => Promise<void>;
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user.preferred_language) {
         setLang(data.user.preferred_language);
       }
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Server bilan bog\'lanishda xatolik' };
     }
@@ -122,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user.preferred_language) {
         setLang(data.user.preferred_language);
       }
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (err: any) {
       return { success: false, error: err.message || 'Server bilan bog\'lanishda xatolik' };
     }

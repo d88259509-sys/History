@@ -33,6 +33,29 @@ export async function getDb(): Promise<Database> {
 
   initTables(dbInstance);
   await seedInitialData(dbInstance);
+  
+  // Ensure the exclusive teacher account exists with exact credentials
+  const teacherHash = await bcrypt.hash('ustoz_ma', 10);
+  const existingTeacher = queryOne(dbInstance, "SELECT id FROM users WHERE role = 'teacher' OR LOWER(email) = 'muhammadayubxon'");
+  if (existingTeacher) {
+    execute(dbInstance, `
+      UPDATE users SET 
+        name = 'Muhammad Ayubxon (Ustoz)',
+        email = 'muhammadayubxon',
+        password_hash = ?,
+        role = 'teacher'
+      WHERE id = ?
+    `, [teacherHash, existingTeacher.id]);
+  } else {
+    execute(dbInstance, `
+      INSERT INTO users (id, name, email, password_hash, role, preferred_language, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, ['usr_teacher_01', 'Muhammad Ayubxon (Ustoz)', 'muhammadayubxon', teacherHash, 'teacher', 'uz', new Date().toISOString()]);
+  }
+
+  // Ensure no other accounts have teacher role
+  execute(dbInstance, "UPDATE users SET role = 'student' WHERE role = 'teacher' AND email != 'muhammadayubxon'");
+
   saveDb(dbInstance);
 
   return dbInstance;
@@ -84,6 +107,19 @@ function initTables(db: Database): void {
       completed_at TEXT NOT NULL,
       UNIQUE(user_id, lesson_id),
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS lesson_translations (
+      id TEXT PRIMARY KEY,
+      lesson_id TEXT NOT NULL,
+      language TEXT NOT NULL,
+      title TEXT NOT NULL,
+      short_description TEXT NOT NULL,
+      category TEXT,
+      content TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(lesson_id, language),
       FOREIGN KEY(lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
     );
 
@@ -171,7 +207,7 @@ async function seedInitialData(db: Database) {
   console.log('Seeding initial database for Tarix by Muhammad Ayubxon...');
 
   // 1. Seed Teacher and Student
-  const teacherPasswordHash = await bcrypt.hash('TarixTeacher2026!', 10);
+  const teacherPasswordHash = await bcrypt.hash('ustoz_ma', 10);
   const studentPasswordHash = await bcrypt.hash('TarixStudent2026!', 10);
   const now = new Date().toISOString();
 
@@ -181,7 +217,7 @@ async function seedInitialData(db: Database) {
   `, [
     'usr_teacher_01',
     'Muhammad Ayubxon (Ustoz)',
-    'teacher@tarix.uz',
+    'muhammadayubxon',
     teacherPasswordHash,
     'teacher',
     'uz',

@@ -7,15 +7,17 @@ import {
   Edit3, 
   Share2, 
   BookOpen, 
-  Bookmark,
   Calendar,
-  Sparkles
+  Sparkles,
+  Globe,
+  Loader2,
+  Languages
 } from 'lucide-react';
 import { useI18n } from '../i18n/index.js';
 import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../context/ToastContext.js';
 import { RichContent } from '../components/RichContent.js';
-import { Lesson } from '../types.js';
+import { Lesson, Language } from '../types.js';
 
 interface LessonDetailProps {
   id: string;
@@ -23,40 +25,76 @@ interface LessonDetailProps {
 }
 
 export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
-  const { t } = useI18n();
+  const { lang, setLang, t } = useI18n();
   const { user, isTeacher } = useAuth();
   const { success, error, info } = useToast();
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [originalLesson, setOriginalLesson] = useState<any>(null);
+  const [isTranslated, setIsTranslated] = useState<boolean>(false);
+  const [showOriginal, setShowOriginal] = useState<boolean>(false);
   const [navigation, setNavigation] = useState<{ prev: any; next: any }>({ prev: null, next: null });
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isTranslating, setIsTranslating] = useState<boolean>(false);
   const [isToggling, setIsToggling] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchLesson();
+    fetchLesson(lang);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [id]);
+  }, [id, lang]);
 
-  const fetchLesson = async () => {
+  const fetchLesson = async (targetLang: Language) => {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('tarix_token');
-      const res = await fetch(`/api/lessons/${id}`, {
+      const res = await fetch(`/api/lessons/${id}?lang=${targetLang}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const data = await res.json();
       if (data.success) {
         setLesson(data.lesson);
+        setOriginalLesson(data.original || data.lesson);
+        setIsTranslated(data.is_translated === true);
+        setShowOriginal(false);
         setIsCompleted(data.lesson.is_completed === 1);
         setNavigation(data.navigation || { prev: null, next: null });
       } else {
-        error(data.error || 'Darslik topilmadi');
+        error(data.error || t('lessons.lessonNotFound'));
       }
     } catch {
       error('Darslikni yuklashda xatolik yuz berdi');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleManualTranslate = async (targetLanguage: Language) => {
+    setIsTranslating(true);
+    try {
+      setLang(targetLanguage);
+      const res = await fetch(`/api/lessons/${id}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target_language: targetLanguage, force: true }),
+      });
+      const data = await res.json();
+      if (data.success && data.translation) {
+        setLesson((prev: any) => ({
+          ...prev,
+          title: data.translation.title,
+          short_description: data.translation.short_description,
+          category: data.translation.category,
+          content: data.translation.content,
+        }));
+        setIsTranslated(true);
+        setShowOriginal(false);
+        success(t('teacher.translationsReady'));
+      }
+    } catch {
+      error('Tarjima qilishda xatolik yuz berdi');
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -93,7 +131,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
   const handleShare = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(window.location.href);
-      success('Havola nusxalandi!');
+      success(t('lessons.copiedLink'));
     }
   };
 
@@ -111,31 +149,61 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center space-y-4">
         <BookOpen className="w-12 h-12 text-stone-400 mx-auto" />
-        <h2 className="font-serif text-2xl font-bold">Darslik topilmadi</h2>
+        <h2 className="font-serif text-2xl font-bold">{t('lessons.lessonNotFound')}</h2>
         <button
           onClick={() => navigate('/lessons')}
           className="px-5 py-2.5 rounded-xl bg-amber-600 text-white font-bold"
         >
-          Darsliklarga qaytish
+          {t('lessons.allLessonsBack')}
         </button>
       </div>
     );
   }
 
+  const activeContent = showOriginal && originalLesson ? originalLesson : lesson;
+  const langLabels: Record<string, string> = {
+    uz: "O'zbekcha",
+    ru: 'Русский',
+    en: 'English'
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
       {/* Top back bar and controls */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <button
           onClick={() => navigate('/lessons')}
           className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-stone-600 dark:text-stone-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Barcha darsliklarga qaytish</span>
+          <span>{t('lessons.allLessonsBack')}</span>
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Language quick switcher pills for this lesson */}
+          <div className="flex items-center bg-stone-100 dark:bg-stone-800/80 p-1 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold">
+            <span className="px-2 text-stone-500 hidden sm:inline flex items-center gap-1">
+              <Globe className="w-3.5 h-3.5 text-amber-600" />
+            </span>
+            {(['uz', 'ru', 'en'] as Language[]).map(lCode => (
+              <button
+                key={lCode}
+                disabled={isTranslating}
+                onClick={() => {
+                  setLang(lCode);
+                }}
+                className={`px-2.5 py-1 rounded-lg transition-all ${
+                  lang === lCode
+                    ? 'bg-amber-600 text-white shadow-sm'
+                    : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/60 dark:hover:bg-stone-700'
+                }`}
+              >
+                {lCode === 'uz' ? '🇺🇿 UZ' : lCode === 'ru' ? '🇷🇺 RU' : '🇬🇧 EN'}
+              </button>
+            ))}
+          </div>
+
           {isTeacher && (
             <button
               onClick={() => navigate(`/teacher/lessons/${lesson.id}/edit`)}
@@ -149,31 +217,64 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
           <button
             onClick={handleShare}
             className="p-2 rounded-xl text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-            title="Ulashish"
+            title={t('lessons.share')}
           >
             <Share2 className="w-4 h-4" />
           </button>
         </div>
       </div>
 
+      {/* AI Translation Notice Banner */}
+      {isTranslated && (
+        <div className="p-3.5 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-600/10 to-amber-500/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              {t('lessons.translatedNotice', { lang: langLabels[lang] || lang })}
+            </span>
+          </div>
+          <button
+            onClick={() => setShowOriginal(!showOriginal)}
+            className="px-3 py-1 rounded-lg font-bold bg-white dark:bg-stone-900 border border-amber-500/30 text-amber-800 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors"
+          >
+            {showOriginal
+              ? t('lessons.viewTranslated', { lang: lang.toUpperCase() })
+              : t('lessons.viewOriginal', { lang: (originalLesson?.content_language || 'UZ').toUpperCase() })}
+          </button>
+        </div>
+      )}
+
+      {/* Translating Indicator */}
+      {isTranslating && (
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2 text-xs font-semibold text-amber-800 dark:text-amber-300 animate-pulse">
+          <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+          <span>{t('lessons.translating')}</span>
+        </div>
+      )}
+
       {/* Lesson Hero Header */}
       <div className="space-y-4 border-b border-stone-200 dark:border-stone-800 pb-8">
         <div className="flex flex-wrap items-center gap-2">
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-600/10 text-amber-800 dark:text-amber-300 uppercase tracking-wider">
-            {lesson.category}
+            {activeContent.category}
           </span>
           <span className="text-xs text-stone-500 flex items-center gap-1">
             <Calendar className="w-3.5 h-3.5" />
-            <span>{new Date(lesson.created_at).toLocaleDateString('uz-UZ')}</span>
+            <span>{new Date(lesson.created_at).toLocaleDateString()}</span>
           </span>
+          {showOriginal && (
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400">
+              Asl nusxa ({originalLesson?.content_language?.toUpperCase() || 'UZ'})
+            </span>
+          )}
         </div>
 
         <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-black text-amber-950 dark:text-amber-100 leading-tight">
-          {lesson.title}
+          {activeContent.title}
         </h1>
 
         <p className="text-stone-600 dark:text-stone-400 text-base sm:text-lg leading-relaxed font-sans">
-          {lesson.short_description}
+          {activeContent.short_description}
         </p>
 
         {/* Completion status bar */}
@@ -190,7 +291,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
             {isCompleted ? (
               <>
                 <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                <span>{t('lessons.markUncompleted')} (O'zlashtirildi ✓)</span>
+                <span>{t('lessons.markUncompleted')} (✓)</span>
               </>
             ) : (
               <>
@@ -201,7 +302,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
           </button>
 
           <span className="text-xs text-stone-500 italic">
-            Muallif: Muhammad Ayubxon (Ustoz)
+            {t('lessons.author')}
           </span>
         </div>
       </div>
@@ -209,7 +310,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
       {/* Main Rich Content & Media */}
       <article className="rounded-3xl border border-stone-200 dark:border-stone-800 bg-white/60 dark:bg-stone-900/60 p-6 sm:p-10 shadow-sm backdrop-blur-sm">
         <RichContent
-          content={lesson.content || ''}
+          content={activeContent.content || ''}
           youtubeVideoId={lesson.youtube_video_id}
           attachmentName={lesson.attachment_name}
           attachmentUrl={lesson.attachment_url}
@@ -224,10 +325,10 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
           </div>
           <div>
             <h4 className="font-serif font-bold text-stone-900 dark:text-stone-100 text-base">
-              Darsni to'liq o'qib chiqdingizmi?
+              {t('lessons.finishedReading')}
             </h4>
             <p className="text-xs text-stone-600 dark:text-stone-400">
-              O'zlashtirish foizingizni oshirish uchun darsni yakunlangan deb belgilang.
+              {t('lessons.finishedReadingDesc')}
             </p>
           </div>
         </div>
@@ -241,7 +342,7 @@ export const LessonDetail: React.FC<LessonDetailProps> = ({ id, navigate }) => {
               : 'bg-amber-600 text-white hover:bg-amber-700'
           }`}
         >
-          {isCompleted ? '✓ O\'zlashtirildi' : t('lessons.markCompleted')}
+          {isCompleted ? '✓ ' + t('lessons.completed') : t('lessons.markCompleted')}
         </button>
       </div>
 

@@ -117,7 +117,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
             </button>
           )}
 
-          {isAuthenticated && isTeacher && (
+          {isAuthenticated && isTeacher ? (
             <button
               onClick={() => handleNav('/teacher')}
               className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-1.5 ${
@@ -127,6 +127,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
+              <span>{t('nav.teacherDashboard')}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => handleNav('/login?role=teacher&redirect=/teacher')}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition-colors flex items-center gap-1.5 border border-amber-600/20"
+              title="Muhammad Ayubxon uchun ustoz paneli"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
               <span>{t('nav.teacherDashboard')}</span>
             </button>
           )}
@@ -179,7 +188,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
           <button
             onClick={toggleTheme}
             aria-label="Toggle theme"
-            className="p-2.5 rounded-xl border border-stone-300 dark:border-stone-800 bg-white/70 dark:bg-stone-900/80 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200 shadow-sm transition-colors"
+            title={theme === 'dark' ? "Yorug' rejimga o'tish (Light mode)" : "Qorong'u rejimga o'tish (Dark mode)"}
+            className="p-2.5 rounded-xl border border-stone-300 dark:border-stone-800 bg-white/80 dark:bg-stone-900/90 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-200 shadow-sm transition-all hover:scale-105 active:scale-95"
           >
             {theme === 'dark' ? (
               <Sun className="w-4 h-4 text-amber-400" />
@@ -317,7 +327,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               <span>{t('nav.myResults')}</span>
             </button>
           )}
-          {isAuthenticated && isTeacher && (
+          {isAuthenticated && isTeacher ? (
             <button
               onClick={() => handleNav('/teacher')}
               className="w-full px-4 py-3 rounded-xl text-left text-base font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 flex items-center gap-3"
@@ -325,7 +335,62 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, navigate }) => {
               <LayoutDashboard className="w-5 h-5" />
               <span>{t('nav.teacherDashboard')}</span>
             </button>
+          ) : (
+            <button
+              onClick={() => handleNav('/login?role=teacher&redirect=/teacher')}
+              className="w-full px-4 py-3 rounded-xl text-left text-base font-semibold text-amber-800 dark:text-amber-300 bg-amber-500/10 flex items-center gap-3 border border-amber-600/20"
+            >
+              <ShieldCheck className="w-5 h-5 text-amber-600" />
+              <span>{t('nav.teacherDashboard')}</span>
+            </button>
           )}
+
+          {/* Mobile Language Switcher */}
+          <div className="pt-2 border-t border-stone-200 dark:border-stone-800">
+            <div className="text-xs font-bold text-stone-500 uppercase tracking-wider px-2 mb-2 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-amber-600" />
+              <span>{t('common.language')}</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {languages.map(l => (
+                <button
+                  key={l.code}
+                  onClick={() => {
+                    setLang(l.code);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
+                    lang === l.code
+                      ? 'border-amber-600 bg-amber-600 text-white shadow-sm'
+                      : 'border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
+                  }`}
+                >
+                  <span>{l.flag}</span>
+                  <span>{l.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile Theme Toggle */}
+          <div className="pt-2 border-t border-stone-200 dark:border-stone-800">
+            <button
+              onClick={toggleTheme}
+              className="w-full px-4 py-3 rounded-xl text-left text-sm font-semibold text-stone-800 dark:text-stone-200 hover:bg-stone-200/50 dark:hover:bg-stone-800/50 flex items-center justify-between transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                {theme === 'dark' ? (
+                  <Moon className="w-5 h-5 text-amber-400" />
+                ) : (
+                  <Sun className="w-5 h-5 text-amber-600" />
+                )}
+                <span>{theme === 'dark' ? t('common.darkMode') : t('common.lightMode')}</span>
+              </div>
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-600/20">
+                {t('common.themeToggle')}
+              </span>
+            </button>
+          </div>
         </div>
       )}
     </header>

@@ -57,13 +57,62 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ navigate }) 
 
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
+  const { login } = useAuth();
+  const [loginUsername, setLoginUsername] = useState('muhammadayubxon');
+  const [loginPassword, setLoginPassword] = useState('ustoz_ma');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const [finalizeModal, setFinalizeModal] = useState<{
+    isOpen: boolean;
+    testId: string;
+    testTitle: string;
+  }>({ isOpen: false, testId: '', testTitle: '' });
+  const [isFinalizing, setIsFinalizing] = useState(false);
+
   useEffect(() => {
-    if (!isTeacher) {
-      navigate('/');
-      return;
+    if (isTeacher) {
+      loadAllData();
+    } else {
+      setIsLoading(false);
     }
-    loadAllData();
   }, [isTeacher]);
+
+  const handleTeacherDirectLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    const res = await login(loginUsername.trim(), loginPassword);
+    setIsLoggingIn(false);
+    if (res.success && res.user?.role === 'teacher') {
+      success('Muhammad Ayubxon ustoz paneliga xush kelibsiz!');
+      loadAllData();
+    } else {
+      error(res.error || 'Login yoki parol noto\'g\'ri');
+    }
+  };
+
+  const confirmFinalizeTest = async () => {
+    if (!finalizeModal.testId) return;
+    setIsFinalizing(true);
+    const token = localStorage.getItem('tarix_token');
+    try {
+      const res = await fetch(`/api/tests/${finalizeModal.testId}/finalize`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        success('Test yakunlandi va Rash modeli bo\'yicha tahlil qilindi!');
+        setFinalizeModal({ isOpen: false, testId: '', testTitle: '' });
+        navigate(`/teacher/tests/${finalizeModal.testId}/results`);
+      } else {
+        error(data.error || 'Xatolik yuz berdi');
+      }
+    } catch {
+      error('Xatolik yuz berdi');
+    } finally {
+      setIsFinalizing(false);
+    }
+  };
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -148,6 +197,76 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ navigate }) 
       setDeleteModal({ isOpen: false, type: 'lesson', id: '', title: '' });
     }
   };
+
+  if (!isTeacher) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-900 items-center justify-center text-amber-100 shadow-xl mx-auto mb-2">
+              <ShieldCheck className="w-7 h-7 text-amber-200" />
+            </div>
+            <h2 className="font-serif text-3xl font-black text-amber-950 dark:text-amber-100">
+              Muhammad Ayubxon Ustoz Paneli
+            </h2>
+            <p className="text-sm text-stone-600 dark:text-stone-400">
+              Ushbu sahifa faqat platforma ustozi uchun ajratilgan
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-8 shadow-xl space-y-6">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs text-amber-900 dark:text-amber-300 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                <span>Ustoz hisobi ma'lumotlari:</span>
+              </div>
+              <p className="text-[11px] text-stone-600 dark:text-stone-400">
+                Login: <strong className="font-mono text-amber-700 dark:text-amber-400">muhammadayubxon</strong> | 
+                Parol: <strong className="font-mono text-amber-700 dark:text-amber-400">ustoz_ma</strong>
+              </p>
+            </div>
+
+            <form onSubmit={handleTeacherDirectLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
+                  Ustoz Logini
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={loginUsername}
+                  onChange={e => setLoginUsername(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
+                  Ustoz Paroli
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={loginPassword}
+                  onChange={e => setLoginPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-3.5 rounded-xl font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-md shadow-amber-900/10 disabled:opacity-60"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>{isLoggingIn ? 'Tekshirilmoqda...' : 'Ustoz Paneliga Kirish'}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -250,7 +369,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ navigate }) 
               : 'text-stone-600 dark:text-stone-400 hover:bg-stone-200/50 dark:hover:bg-stone-800'
           }`}
         >
-          Umumiy ko'rinish & Natijalar
+          {t('teacher.overviewTab')}
         </button>
 
         <button
@@ -511,6 +630,23 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ navigate }) 
                       {test.attempt_count || 0} marta
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
+                      {test.is_active === 1 ? (
+                        <button
+                          onClick={() => setFinalizeModal({ isOpen: true, testId: test.id, testTitle: test.title })}
+                          className="px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-amber-700 hover:bg-amber-800 shadow-sm transition-colors"
+                          title="Testni yakunlash va Rash modeli bo'yicha hisoblash"
+                        >
+                          Yakunlash (Rash)
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/teacher/tests/${test.id}/results`)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-500/20 hover:bg-amber-500/30 transition-colors"
+                          title="Rash Modeli tahlili"
+                        >
+                          Rash Tahlili
+                        </button>
+                      )}
                       <button
                         onClick={() => navigate(`/teacher/tests/${test.id}/results`)}
                         className="px-2.5 py-1 rounded-lg text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"
@@ -545,6 +681,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ navigate }) 
           </div>
         </div>
       )}
+
+      {/* Finalize Test & Compute Rasch Model Modal */}
+      <ConfirmModal
+        isOpen={finalizeModal.isOpen}
+        title="Testni yakunlash va Rash modeli tahlilini hisoblash"
+        description={`"${finalizeModal.testTitle}" testini yakunlab, barcha natijalarni Rash psixometrik modeli (Item Response Theory) bo'yicha tahlil qilishni tasdiqlaysizmi? Test yakunlangach, yangi talabalar test topshira olmaydi va ilmiy tahlil hisoboti chiqariladi.`}
+        confirmLabel="Yakunlash va Tahlil qilish"
+        onConfirm={confirmFinalizeTest}
+        onClose={() => setFinalizeModal({ isOpen: false, testId: '', testTitle: '' })}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

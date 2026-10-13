@@ -17,8 +17,6 @@ export const Register: React.FC<RegisterProps> = ({ navigate }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
-  const [teacherCode, setTeacherCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,25 +26,19 @@ export const Register: React.FC<RegisterProps> = ({ navigate }) => {
       return;
     }
 
-    if (role === 'teacher' && !teacherCode) {
-      error(t('auth.teacherSecretCode') + ' kiritilishi shart');
-      return;
-    }
-
     setIsLoading(true);
     const res = await register({
       name,
       email,
       password,
-      role,
-      teacherCode,
+      role: 'student',
       preferredLanguage: lang as Language,
     });
     setIsLoading(false);
 
     if (res.success) {
       success('Ro\'yxatdan muvaffaqiyatli o\'tdingiz!');
-      navigate(role === 'teacher' ? '/teacher' : '/');
+      navigate('/');
     } else {
       error(res.error || 'Ro\'yxatdan o\'tishda xatolik yuz berdi');
     }
@@ -65,7 +57,7 @@ export const Register: React.FC<RegisterProps> = ({ navigate }) => {
             {t('auth.registerTitle')}
           </h2>
           <p className="text-sm text-stone-600 dark:text-stone-400">
-            Tarix by Muhammad Ayubxon ta'lim tizimiga qo'shiling
+            Talabalar uchun tarix ta'lim tizimiga qo'shilish
           </p>
         </div>
 
@@ -73,60 +65,20 @@ export const Register: React.FC<RegisterProps> = ({ navigate }) => {
         <div className="rounded-3xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-8 shadow-xl space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             
-            {/* Role Selector Tabs */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-2">
-                {t('auth.role')}
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole('student')}
-                  className={`p-3 rounded-2xl border flex items-center justify-center gap-2.5 text-sm font-bold transition-all ${
-                    role === 'student'
-                      ? 'border-amber-600 bg-amber-500/10 text-amber-800 dark:text-amber-300 shadow-sm'
-                      : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <GraduationCap className="w-5 h-5 text-amber-600" />
-                  <span>{t('auth.roleStudent')}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole('teacher')}
-                  className={`p-3 rounded-2xl border flex items-center justify-center gap-2.5 text-sm font-bold transition-all ${
-                    role === 'teacher'
-                      ? 'border-amber-600 bg-amber-500/10 text-amber-800 dark:text-amber-300 shadow-sm'
-                      : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800'
-                  }`}
-                >
-                  <Shield className="w-5 h-5 text-amber-600" />
-                  <span>{t('auth.roleTeacher')}</span>
-                </button>
+            {/* Account Role Notice */}
+            <div className="p-3.5 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-stone-800 dark:text-stone-200 font-bold">
+                <GraduationCap className="w-4 h-4 text-amber-600" />
+                <span>Talaba hisobi</span>
               </div>
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="text-amber-700 dark:text-amber-400 hover:underline font-semibold"
+              >
+                Ustoz paneli uchun kirish &rarr;
+              </button>
             </div>
-
-            {/* If Teacher, secret code field */}
-            {role === 'teacher' && (
-              <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 space-y-2 animate-in fade-in duration-200">
-                <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300">
-                  <KeyRound className="w-4 h-4 text-amber-600" />
-                  <span>{t('auth.teacherSecretCode')}</span>
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={teacherCode}
-                  onChange={e => setTeacherCode(e.target.value)}
-                  placeholder="AYUBXON_USTOZ_2026"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-amber-500/40 bg-white dark:bg-stone-950 text-stone-900 dark:text-stone-100 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-                <p className="text-[11px] text-amber-800/80 dark:text-amber-400/80">
-                  {t('auth.teacherCodeHelp')} (kod: <code className="font-bold underline cursor-pointer" onClick={() => setTeacherCode('AYUBXON_USTOZ_2026')}>AYUBXON_USTOZ_2026</code>)
-                </p>
-              </div>
-            )}
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">

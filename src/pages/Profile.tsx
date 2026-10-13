@@ -162,11 +162,15 @@ export const Profile: React.FC<ProfileProps> = ({ navigate }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
-                Afzal ko'rilgan til
+                {t('common.language')}
               </label>
               <select
                 value={preferredLang}
-                onChange={e => setPreferredLang(e.target.value as Language)}
+                onChange={e => {
+                  const newL = e.target.value as Language;
+                  setPreferredLang(newL);
+                  setLang(newL);
+                }}
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-950 text-sm font-semibold focus:outline-none"
               >
                 <option value="uz">🇺🇿 O'zbekcha</option>
@@ -177,14 +181,14 @@ export const Profile: React.FC<ProfileProps> = ({ navigate }) => {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
-                Mavzu (Theme)
+                {t('common.themeToggle')}
               </label>
               <button
                 type="button"
                 onClick={toggleTheme}
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-950 text-sm font-bold flex items-center justify-between"
               >
-                <span>{theme === 'dark' ? 'Qorong\'u rejim (Dark)' : 'Yorug\' rejim (Light)'}</span>
+                <span>{theme === 'dark' ? t('common.darkMode') : t('common.lightMode')}</span>
                 {theme === 'dark' ? <Moon className="w-4 h-4 text-amber-400" /> : <Sun className="w-4 h-4 text-amber-600" />}
               </button>
             </div>
@@ -197,7 +201,7 @@ export const Profile: React.FC<ProfileProps> = ({ navigate }) => {
               className="px-6 py-2.5 rounded-xl font-bold text-sm bg-amber-600 hover:bg-amber-700 text-white flex items-center gap-2 shadow-sm disabled:opacity-60"
             >
               <Save className="w-4 h-4" />
-              <span>{isUpdating ? 'Saqlanmoqda...' : 'O\'zgarishlarni saqlash'}</span>
+              <span>{isUpdating ? t('common.loading') : t('common.save')}</span>
             </button>
           </div>
         </form>

@@ -3,7 +3,11 @@
     "name": "Tarix by Muhammad Ayubxon",
     "tagline": "Tarix fanini teran va zamonaviy o'rganish platformasi",
     "founder": "Muhammad Ayubxon",
-    "role": "Tarix fani ustozi va ilmiy tadqiqotchi"
+    "role": "Tarix fani ustozi va ilmiy tadqiqotchi",
+    "authorBadge": "Platforma Asoschisi va Muallifi",
+    "authorQuote": "\"Tarix — bu shunchaki o'tgan yillar va sanalar ro'yxati emas. Bu ajdodlarimizning xatolari, g'alabalari, madaniyati va ruhiyati ifodasidir. Ushbu platforma har bir talabaga tariximizni zerikarli yodlashdan xalos bo'lib, chin dildan his qilish va teran tushunish imkonini beradi.\"",
+    "authorPoint1": "Akademik manbalar asosida tuzilgan darslar",
+    "authorPoint2": "Interaktiv testlar va xolis baholash"
   },
   "nav": {
     "home": "Bosh sahifa",
@@ -41,6 +45,11 @@
     "f4Title": "Moslashuvchan & Qulay",
     "f4Desc": "3 ta tilda (O'zbekcha, Ruscha, Inglizcha), qorong'u va yorug' rejimda har qanday qurilmada foydalaning."
   },
+  "home": {
+    "curriculum": "Ilmiy dastur",
+    "featuredLessons": "Saralangan Darsliklar",
+    "viewAllLessons": "Barcha darslarni ko'rish"
+  },
   "lessons": {
     "title": "Darsliklar va Ma'ruzalar",
     "subtitle": "Davrlar va mavzular bo'yicha tarix saboqlari",
@@ -61,14 +70,29 @@
     "videoLecture": "Video ma'ruza",
     "addLesson": "Yangi dars qo'shish",
     "editLesson": "Darsni tahrirlash",
-    "deleteLesson": "Darsni o'chirish"
+    "deleteLesson": "Darsni o'chirish",
+    "aiTranslate": "AI Tarjima",
+    "translating": "AI orqali tarjima qilinmoqda...",
+    "translatedNotice": "Ushbu darslik AI tomonidan {lang} tiliga tarjima qilingan",
+    "viewOriginal": "Asl nusxani ko'rish ({lang})",
+    "viewTranslated": "Tarjimani ko'rish ({lang})",
+    "allLessonsBack": "Barcha darsliklarga qaytish",
+    "author": "Muallif: Muhammad Ayubxon (Ustoz)",
+    "finishedReading": "Darsni to'liq o'qib chiqdingizmi?",
+    "finishedReadingDesc": "O'zlashtirish ko'rsatkichini oshirish uchun darsni yakunlangan deb belgilang.",
+    "share": "Ulashish",
+    "copiedLink": "Havola nusxalandi!",
+    "lessonNotFound": "Darslik topilmadi",
+    "selectLang": "Dars tili:",
+    "autoTranslateHint": "Dars avtomatik ravishda tanlangan tilga o'giriladi"
   },
   "tests": {
     "title": "Tarix Testlari",
     "subtitle": "Bilimlarni sinovdan o'tkazish markazi",
     "enterCodeTitle": "Testga kirish kodi",
-    "enterCodeSubtitle": "Ustozingiz taqdim etgan 6 xonali unikal test kodini kiriting (masalan: TEMUR1):",
-    "codeInputPlaceholder": "KOD (masalan: TEMUR1)",
+    "enterCodeSubtitle": "Ustozingiz taqdim etgan 6 xonali unikal test kodini kiriting:",
+    "codeInputPlaceholder": "TEST KODI",
+    "codeInputLabel": "6 xonali unikal test kodi",
     "checkCode": "Testni boshlash",
     "checking": "Tekshirilmoqda...",
     "availableTests": "Mavjud Ochiq Testlar",
@@ -78,6 +102,7 @@
     "startTest": "Boshlash",
     "codeRequired": "Iltimos, test kodini kiriting",
     "codeLengthError": "Kod 6 ta belgidan iborat bo'lishi kerak",
+    "securityNotice": "Test natijalari va ballar serverda xolisona hisoblanadi. Vaqt yakunlanganda avtomatik yuboriladi.",
     "timeLeft": "Qolgan vaqt",
     "submitTest": "Testni yakunlash",
     "submitting": "Yuborilmoqda...",
@@ -126,7 +151,9 @@
   },
   "teacher": {
     "dashboardTitle": "Ustoz Boshqaruv Paneli",
+    "overviewTab": "Umumiy ko'rinish & Natijalar",
     "welcome": "Xush kelibsiz, {name}!",
+    "exclusiveAccess": "Yagona Ustoz hisobi (Muhammad Ayubxon)",
     "statsLessons": "Jami Darsliklar",
     "statsTests": "Yaratilgan Testlar",
     "statsStudents": "Ro'yxatdagi Talabalar",
@@ -146,13 +173,24 @@
     "exportCsv": "CSV (Excel) yuklab olish",
     "accuracy": "To'g'ri javob berish aniqligi",
     "questionAnalytics": "Savollar bo'yicha tahlil",
-    "studentAttempts": "Talabalar natijalari"
+    "studentAttempts": "Talabalar natijalari",
+    "translateToAll": "Barcha tillarga AI tarjima qilish (RU, EN)",
+    "translating": "AI tarjima yaratmoqda...",
+    "translationsReady": "Darslik rus va ingliz tillariga muvaffaqiyatli tarjima qilindi!"
+  },
+  "categories": {
+    "all": "Barcha bo'limlar",
+    "ancient": "Qadimgi Dunyo Tarixi",
+    "middleAges": "O'rta Asrlar Tarixi",
+    "modern": "Yangi Davr Tarixi",
+    "contemporary": "Eng Yangi Tarix",
+    "uzbekistan": "O'zbekiston Tarixi"
   },
   "auth": {
     "loginTitle": "Platformaga kirish",
     "registerTitle": "Ro'yxatdan o'tish",
     "name": "Ism va Familiya",
-    "email": "Elektron pochta",
+    "email": "Elektron pochta / Login",
     "password": "Parol",
     "confirmPassword": "Parolni tasdiqlang",
     "role": "Siz kimsiz?",
@@ -160,7 +198,7 @@
     "roleTeacher": "Ustoz / O'qituvchi",
     "teacherSecretCode": "Ustoz maxfiy taklif kodi",
     "teacherCodePlaceholder": "Taklif kodini kiriting",
-    "teacherCodeHelp": "Ustoz hisobi uchun maxfiy kod talab qilinadi (AYUBXON_USTOZ_2026)",
+    "teacherCodeHelp": "Ustoz hisobi uchun maxfiy login va parol talab qilinadi",
     "loginBtn": "Tizimga kirish",
     "registerBtn": "Ro'yxatdan o'tish",
     "noAccount": "Hisobingiz yo'qmi?",
@@ -181,6 +219,12 @@
     "deleteConfirmDesc": "Bu amalni ortga qaytarib bo'lmaydi.",
     "notFoundTitle": "Sahifa topilmadi",
     "notFoundDesc": "Kechirasiz, siz qidirayotgan sahifa mavjud emas yoki ko'chirilgan.",
-    "backHome": "Bosh sahifaga qaytish"
+    "backHome": "Bosh sahifaga qaytish",
+    "themeToggle": "Mavzuni almashtirish",
+    "lightMode": "Yorug' rejim",
+    "darkMode": "Qorong'i rejim",
+    "language": "Til",
+    "previous": "Oldingi",
+    "next": "Keyingi"
   }
 }

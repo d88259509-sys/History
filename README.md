@@ -46,18 +46,17 @@
 
 Dastur birinchi marta ishga tushganda ma'lumotlar bazasi avtomatik yaratiladi va quyidagi hisoblar kiritiladi:
 
-### 👑 Ustoz (Teacher / Admin) Hisobi:
-- **Email:** `teacher@tarix.uz`
-- **Parol:** `TarixTeacher2026!`
-- **Rol:** `teacher`
-- **Ustoz maxfiy taklif kodi:** `AYUBXON_USTOZ_2026`
+### 👑 Ustoz (Muhammad Ayubxon) Maxsus Hisobi:
+- **Login:** `muhammadayubxon`
+- **Parol:** `ustoz_ma`
+- **Rol:** `teacher` (Ustoz paneli, darsliklar & testlarni boshqarish, Rasch modeli tahlili)
 
 ### 🎓 Talaba (Student) Hisobi:
 - **Email:** `student@tarix.uz`
 - **Parol:** `TarixStudent2026!`
-- **Rol:** `student`
+- **Rol:** `student` (Darsliklarni o'rganish, test topshirish, shaxsiy natijalar)
 
-*(Yangi foydalanuvchilar ro'yxatdan o'tganda "Ustoz" rolini tanlasa, faqat `AYUBXON_USTOZ_2026` maxfiy taklif kodi bilan o'ta oladi).*
+*(Ustoz paneli faqat `muhammadayubxon` hisobi orqali ochiladi. Yangi ro'yxatdan o'tuvchilar avtomatik tarzda Talaba hisobiga ega bo'ladilar).*
 
 ---
 

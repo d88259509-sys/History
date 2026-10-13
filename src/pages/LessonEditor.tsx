@@ -7,7 +7,10 @@ import {
   BookOpen, 
   Youtube, 
   FileText, 
-  Globe 
+  Globe,
+  Sparkles,
+  Loader2,
+  Languages
 } from 'lucide-react';
 import { useI18n } from '../i18n/index.js';
 import { useAuth } from '../context/AuthContext.js';
@@ -38,6 +41,7 @@ export const LessonEditor: React.FC<LessonEditorProps> = ({ id, navigate }) => {
 
   const [isPreview, setIsPreview] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [isLoading, setIsLoading] = useState(Boolean(id));
 
   useEffect(() => {
@@ -127,6 +131,67 @@ export const LessonEditor: React.FC<LessonEditorProps> = ({ id, navigate }) => {
       error('Xatolik yuz berdi');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleGenerateTranslations = async () => {
+    if (!title.trim() || !shortDescription.trim() || !content.trim()) {
+      error('Tarjima qilish uchun avval darslik sarlavhasi, tavsifi va matnini to‘ldiring');
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const token = localStorage.getItem('tarix_token');
+      let targetId = id;
+
+      // If new lesson, save first
+      if (!targetId) {
+        const payload = {
+          title: title.trim(),
+          short_description: shortDescription.trim(),
+          category: category.trim(),
+          content,
+          youtube_video_id: youtubeVideoId.trim() || null,
+          attachment_name: attachmentName.trim() || null,
+          attachment_url: attachmentUrl.trim() || null,
+          order_index: Number(orderIndex) || 0,
+          is_published: isPublished ? 1 : 0,
+          content_language: contentLanguage,
+        };
+
+        const resSave = await fetch('/api/lessons', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const dataSave = await resSave.json();
+        if (dataSave.success && dataSave.lesson) {
+          targetId = dataSave.lesson.id;
+        } else {
+          throw new Error(dataSave.error || 'Darslikni saqlab bo‘lmadi');
+        }
+      }
+
+      const res = await fetch(`/api/lessons/${targetId}/translate-all`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        success(t('teacher.translationsReady'));
+      } else {
+        error(data.error || 'Tarjima qilishda xatolik yuz berdi');
+      }
+    } catch (err: any) {
+      error(err.message || 'Xatolik yuz berdi');
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -336,23 +401,45 @@ export const LessonEditor: React.FC<LessonEditorProps> = ({ id, navigate }) => {
           </div>
 
           {/* Form Actions */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-200 dark:border-stone-800">
             <button
               type="button"
-              onClick={() => navigate('/teacher')}
-              className="px-5 py-2.5 rounded-xl font-bold text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-stone-800"
+              disabled={isTranslating || isSaving}
+              onClick={handleGenerateTranslations}
+              className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm border border-amber-600/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 transition-colors flex items-center gap-2 disabled:opacity-60"
+              title="Darslikni AI orqali Rus va Ingliz tillariga avtomatik tarjima qilish"
             >
-              Bekor qilish
+              {isTranslating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-600" />
+                  <span>{t('teacher.translating')}</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-600" />
+                  <span>{t('teacher.translateToAll')}</span>
+                </>
+              )}
             </button>
 
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-7 py-3 rounded-xl font-bold text-sm text-white bg-amber-600 hover:bg-amber-700 active:scale-95 shadow-md flex items-center gap-2 disabled:opacity-60"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isSaving ? 'Saqlanmoqda...' : 'Darslikni saqlash'}</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/teacher')}
+                className="px-5 py-2.5 rounded-xl font-bold text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-stone-800"
+              >
+                {t('common.cancel')}
+              </button>
+
+              <button
+                type="submit"
+                disabled={isSaving || isTranslating}
+                className="px-7 py-3 rounded-xl font-bold text-sm text-white bg-amber-600 hover:bg-amber-700 active:scale-95 shadow-md flex items-center gap-2 disabled:opacity-60"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSaving ? t('common.loading') : t('common.save')}</span>
+              </button>
+            </div>
           </div>
         </form>
       )}

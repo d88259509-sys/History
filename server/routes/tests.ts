@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { getDb, queryAll, queryOne, execute } from '../db.js';
 import { requireAuth, requireTeacher, AuthenticatedRequest } from '../auth.js';
 import { createRateLimiter } from '../rateLimit.js';
+import { computeRaschModel } from '../rasch.js';
 
 const router = Router();
 
@@ -60,10 +61,10 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
       `);
       return res.json({ success: true, tests });
     } else {
-      // Student: list active tests they can see, plus if they attempted them
+      // Student: list active tests they can see, without secret access code
       const tests = queryAll(db, `
         SELECT 
-          t.id, t.title, t.description, t.access_code, t.time_limit_minutes,
+          t.id, t.title, t.description, t.time_limit_minutes,
           t.passing_score, t.is_active, t.allow_retakes, t.content_language,
           t.start_date, t.end_date,
           (SELECT COUNT(*) FROM questions q WHERE q.test_id = t.id) as question_count,
@@ -396,7 +397,7 @@ router.get('/attempts/:attemptId', requireAuth, async (req: AuthenticatedRequest
     const { attemptId } = req.params;
     const db = await getDb();
     const attempt = queryOne(db, `
-      SELECT ta.*, t.title as test_title, t.passing_score, t.show_explanations
+      SELECT ta.*, t.title as test_title, t.passing_score, t.show_explanations, t.is_active as test_is_active
       FROM test_attempts ta
       JOIN tests t ON t.id = ta.test_id
       WHERE ta.id = ?
@@ -726,6 +727,9 @@ router.get('/:id/results', requireAuth, requireTeacher, async (req: Authenticate
       ? Math.round(attempts.reduce((sum, a) => sum + a.percent, 0) / totalAttempts)
       : 0;
 
+    // Psychometric Rasch Model Computation
+    const raschReport = computeRaschModel(test, questions, attempts);
+
     return res.json({
       success: true,
       test,
@@ -736,11 +740,83 @@ router.get('/:id/results', requireAuth, requireTeacher, async (req: Authenticate
         averagePercent: avgPercent,
       },
       questions: questionsWithStats,
-      attempts
+      attempts,
+      raschReport,
     });
   } catch (err) {
     console.error('Error fetching test results:', err);
     return res.status(500).json({ success: false, error: 'Natijalarni yuklashda xatolik yuz berdi' });
+  }
+});
+
+// POST /api/tests/:id/finalize - Finalize/close test by teacher and generate Rasch Model assessment
+router.post('/:id/finalize', requireAuth, requireTeacher, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const db = await getDb();
+
+    const test = queryOne(db, 'SELECT * FROM tests WHERE id = ?', [id]);
+    if (!test) {
+      return res.status(404).json({ success: false, error: 'Test topilmadi' });
+    }
+
+    // Toggle active state to 0 (closed)
+    const now = new Date().toISOString();
+    execute(db, 'UPDATE tests SET is_active = 0, updated_at = ? WHERE id = ?', [now, id]);
+
+    const questions = queryAll(db, 'SELECT * FROM questions WHERE test_id = ? ORDER BY order_index ASC', [id]);
+    const attempts = queryAll(db, `
+      SELECT ta.*, u.email as student_email
+      FROM test_attempts ta
+      LEFT JOIN users u ON u.id = ta.user_id
+      WHERE ta.test_id = ?
+      ORDER BY ta.completed_at DESC
+    `, [id]);
+
+    const raschReport = computeRaschModel(test, questions, attempts);
+
+    return res.json({
+      success: true,
+      message: 'Test muvaffaqiyatli yakunlandi va Rasch modeli bo\'yicha tahlil qilindi',
+      test: { ...test, is_active: 0 },
+      raschReport
+    });
+  } catch (err) {
+    console.error('Error finalizing test:', err);
+    return res.status(500).json({ success: false, error: 'Testni yakunlashda xatolik yuz berdi' });
+  }
+});
+
+// GET /api/tests/:id/rasch-analysis - Get psychometric Rasch Model analysis report
+router.get('/:id/rasch-analysis', requireAuth, requireTeacher, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const db = await getDb();
+
+    const test = queryOne(db, 'SELECT * FROM tests WHERE id = ?', [id]);
+    if (!test) {
+      return res.status(404).json({ success: false, error: 'Test topilmadi' });
+    }
+
+    const questions = queryAll(db, 'SELECT * FROM questions WHERE test_id = ? ORDER BY order_index ASC', [id]);
+    const attempts = queryAll(db, `
+      SELECT ta.*, u.email as student_email
+      FROM test_attempts ta
+      LEFT JOIN users u ON u.id = ta.user_id
+      WHERE ta.test_id = ?
+      ORDER BY ta.completed_at DESC
+    `, [id]);
+
+    const raschReport = computeRaschModel(test, questions, attempts);
+
+    return res.json({
+      success: true,
+      test,
+      raschReport
+    });
+  } catch (err) {
+    console.error('Error computing Rasch model:', err);
+    return res.status(500).json({ success: false, error: 'Rasch modelini hisoblashda xatolik yuz berdi' });
   }
 });
 

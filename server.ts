@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -70,26 +71,8 @@ async function startServer() {
         return next();
       }
       try {
-        let template = await vite.transformIndexHtml(url, `<!doctype html>
-<html lang="uz">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tarix by Muhammad Ayubxon | Onlayn Tarix Ta'lim Platformasi</title>
-    <meta name="description" content="Tarix by Muhammad Ayubxon - Zamonaviy va qulay tarix fanini o'rganish platformasi. Darsliklar, testlar va mustahkam bilim." />
-    <meta property="og:title" content="Tarix by Muhammad Ayubxon | Onlayn Tarix Ta'lim Platformasi" />
-    <meta property="og:description" content="Tarix by Muhammad Ayubxon - Zamonaviy va qulay tarix fanini o'rganish platformasi. Darsliklar, testlar va mustahkam bilim." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-amber-50/30 text-stone-900 dark:bg-stone-950 dark:text-stone-100 antialiased selection:bg-amber-500 selection:text-white transition-colors duration-200">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>`);
+        const indexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
+        const template = await vite.transformIndexHtml(url, indexHtml);
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
       } catch (e: any) {
         vite.ssrFixStacktrace(e);

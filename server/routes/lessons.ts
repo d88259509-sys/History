@@ -1,7 +1,8 @@
-import { Router, Response } from 'express';
+import { Router, Response, Request } from 'express';
 import crypto from 'crypto';
 import { getDb, queryAll, queryOne, execute } from '../db.js';
 import { requireAuth, requireTeacher, optionalAuth, AuthenticatedRequest } from '../auth.js';
+import { getOrTranslateLesson, translateText } from '../services/translator.js';
 
 const router = Router();
 
@@ -11,15 +12,22 @@ router.get('/', optionalAuth, async (req: AuthenticatedRequest, res: Response) =
     const db = await getDb();
     const isTeacher = req.user?.role === 'teacher';
     const userId = req.user?.id;
-    const { category, search, language } = req.query;
+    const { category, search, language, active_lang } = req.query;
+    const targetLang = typeof active_lang === 'string' && ['uz', 'ru', 'en'].includes(active_lang) ? active_lang : null;
 
     let query = `
       SELECT 
-        l.id, l.title, l.short_description, l.category, l.attachment_name, 
+        l.id, 
+        ${targetLang && targetLang !== 'uz' ? 'COALESCE(lt.title, l.title)' : 'l.title'} as title, 
+        ${targetLang && targetLang !== 'uz' ? 'COALESCE(lt.short_description, l.short_description)' : 'l.short_description'} as short_description, 
+        ${targetLang && targetLang !== 'uz' ? 'COALESCE(lt.category, l.category)' : 'l.category'} as category, 
+        l.attachment_name, 
         l.attachment_url, l.youtube_video_id, l.order_index, l.is_published, 
         l.content_language, l.created_at, l.updated_at
         ${userId ? `, (CASE WHEN lc.id IS NOT NULL THEN 1 ELSE 0 END) as is_completed` : `, 0 as is_completed`}
+        ${targetLang && targetLang !== 'uz' ? `, (CASE WHEN lt.id IS NOT NULL THEN 1 ELSE 0 END) as is_translated` : `, 0 as is_translated`}
       FROM lessons l
+      ${targetLang && targetLang !== 'uz' ? `LEFT JOIN lesson_translations lt ON lt.lesson_id = l.id AND lt.language = '${targetLang}'` : ''}
       ${userId ? `LEFT JOIN lesson_completions lc ON lc.lesson_id = l.id AND lc.user_id = '${userId}'` : ''}
       WHERE 1=1
     `;
@@ -80,13 +88,16 @@ router.get('/', optionalAuth, async (req: AuthenticatedRequest, res: Response) =
   }
 });
 
-// GET /api/lessons/:id - Get lesson details with previous and next lesson ids
+// GET /api/lessons/:id - Get lesson details with previous and next lesson ids, supports ?lang=
 router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const db = await getDb();
     const isTeacher = req.user?.role === 'teacher';
     const userId = req.user?.id;
+    const targetLang = typeof req.query.lang === 'string' && ['uz', 'ru', 'en'].includes(req.query.lang)
+      ? req.query.lang
+      : null;
 
     const lesson = queryOne(db, `
       SELECT l.* ${userId ? `, (CASE WHEN lc.id IS NOT NULL THEN 1 ELSE 0 END) as is_completed` : `, 0 as is_completed`}
@@ -103,6 +114,21 @@ router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res: Response
       return res.status(403).json({ success: false, error: 'Ushbu darslik hali chop etilmagan' });
     }
 
+    let displayLesson = { ...lesson };
+    let isTranslated = false;
+
+    if (targetLang && targetLang !== (lesson.content_language || 'uz')) {
+      const transResult = await getOrTranslateLesson(db, lesson, targetLang);
+      displayLesson = {
+        ...displayLesson,
+        title: transResult.title,
+        short_description: transResult.short_description,
+        category: transResult.category,
+        content: transResult.content,
+      };
+      isTranslated = transResult.is_translated;
+    }
+
     // Get previous and next lessons for navigation
     const allLessons = queryAll(db, `
       SELECT id, title, order_index FROM lessons 
@@ -116,7 +142,17 @@ router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res: Response
 
     return res.json({
       success: true,
-      lesson,
+      lesson: displayLesson,
+      original: {
+        title: lesson.title,
+        short_description: lesson.short_description,
+        category: lesson.category,
+        content: lesson.content,
+        content_language: lesson.content_language || 'uz',
+      },
+      is_translated: isTranslated,
+      active_language: targetLang || lesson.content_language || 'uz',
+      original_language: lesson.content_language || 'uz',
       navigation: {
         prev: prevLesson,
         next: nextLesson
@@ -125,6 +161,53 @@ router.get('/:id', optionalAuth, async (req: AuthenticatedRequest, res: Response
   } catch (err) {
     console.error('Error fetching lesson:', err);
     return res.status(500).json({ success: false, error: 'Darslikni yuklashda xatolik yuz berdi' });
+  }
+});
+
+// POST /api/lessons/:id/translate - Translate lesson to target language (cached)
+router.post('/:id/translate', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { target_language, force } = req.body;
+    if (!target_language || !['uz', 'ru', 'en'].includes(target_language)) {
+      return res.status(400).json({ success: false, error: 'Til noto\'g\'ri ko\'rsatilgan (uz, ru, en bo\'lishi shart)' });
+    }
+
+    const db = await getDb();
+    const lesson = queryOne(db, 'SELECT * FROM lessons WHERE id = ?', [id]);
+    if (!lesson) {
+      return res.status(404).json({ success: false, error: 'Darslik topilmadi' });
+    }
+
+    const result = await getOrTranslateLesson(db, lesson, target_language, force === true);
+    return res.json({ success: true, translation: result });
+  } catch (err: any) {
+    console.error('Translation endpoint error:', err);
+    return res.status(500).json({ success: false, error: err?.message || 'Tarjima qilishda xatolik yuz berdi' });
+  }
+});
+
+// POST /api/lessons/:id/translate-all - Generate translations for all supported languages
+router.post('/:id/translate-all', requireAuth, requireTeacher, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const db = await getDb();
+    const lesson = queryOne(db, 'SELECT * FROM lessons WHERE id = ?', [id]);
+    if (!lesson) {
+      return res.status(404).json({ success: false, error: 'Darslik topilmadi' });
+    }
+
+    const targets = (['uz', 'ru', 'en'] as const).filter(l => l !== (lesson.content_language || 'uz'));
+    const results: Record<string, any> = {};
+
+    for (const t of targets) {
+      results[t] = await getOrTranslateLesson(db, lesson, t, true);
+    }
+
+    return res.json({ success: true, translations: results });
+  } catch (err: any) {
+    console.error('Batch translation error:', err);
+    return res.status(500).json({ success: false, error: err?.message || 'Tarjima qilishda xatolik yuz berdi' });
   }
 });
 

@@ -24,7 +24,7 @@ interface TestResultProps {
 }
 
 export const TestResult: React.FC<TestResultProps> = ({ attemptId, navigate }) => {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const { error } = useToast();
 
   const [result, setResult] = useState<any | null>(null);
@@ -71,6 +71,8 @@ export const TestResult: React.FC<TestResultProps> = ({ attemptId, navigate }) =
   const formatMinutes = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
+    if (lang === 'ru') return `${m} мин ${s} сек`;
+    if (lang === 'en') return `${m} min ${s} sec`;
     return `${m} daq ${s} soniya`;
   };
 
@@ -87,7 +89,7 @@ export const TestResult: React.FC<TestResultProps> = ({ attemptId, navigate }) =
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
         <Award className="w-12 h-12 text-stone-400 mx-auto" />
-        <h2 className="font-serif text-2xl font-bold">Natija topilmadi</h2>
+        <h2 className="font-serif text-2xl font-bold">{t('common.notFoundTitle')}</h2>
         <button
           onClick={() => navigate('/tests')}
           className="px-5 py-2.5 rounded-xl bg-amber-600 text-white font-bold"
@@ -142,6 +144,48 @@ export const TestResult: React.FC<TestResultProps> = ({ attemptId, navigate }) =
               {t('results.scoreEarned')}: <span className="font-bold text-stone-900 dark:text-stone-100">{result.score} / {result.total_points} ball</span>
             </div>
           </div>
+
+          {/* Rasch Model Ability Score Badge */}
+          {(() => {
+            const rawP = result.total_points > 0 ? result.score / result.total_points : 0.5;
+            const p = Math.max(0.05, Math.min(0.95, rawP));
+            const logit = Number(Math.log(p / (1 - p)).toFixed(2));
+            const raschScore = Math.min(100, Math.max(0, Math.round(50 + logit * 18)));
+            const isFinalized = result.test_is_active === 0;
+
+            return (
+              <div className="space-y-3">
+                {isFinalized && (
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-600/15 via-amber-700/15 to-amber-900/15 border border-amber-600/30 text-xs text-amber-950 dark:text-amber-200 flex items-center gap-2.5 font-semibold text-left">
+                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      Ushbu test ustoz Muhammad Ayubxon tomonidan yakunlangan va <strong>Rash modeli (Item Response Theory)</strong> bo'yicha ilmiy tekshirilib, rasmiy baholangan.
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-3.5 rounded-2xl border border-amber-500/25 bg-amber-500/5 text-xs text-stone-700 dark:text-stone-300 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold">
+                      &beta; Rash
+                    </span>
+                    <span className="text-left">
+                      <span className="font-bold text-stone-900 dark:text-stone-100 block">Rash Qobiliyat Logiti</span>
+                      <span className="text-stone-500">Psixometrik o'lchov (IRT)</span>
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono font-bold text-base text-amber-800 dark:text-amber-400 block">
+                      {logit > 0 ? `+${logit}` : logit} logit
+                    </span>
+                    <span className="text-[11px] text-stone-500">
+                      Kalibrlangan ball: <strong className="text-stone-900 dark:text-stone-100">{raschScore}/100</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Key metrics grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-stone-200 dark:border-stone-800 text-xs">

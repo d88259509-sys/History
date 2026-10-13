@@ -23,7 +23,7 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ navigate }) => {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const { error } = useToast();
 
@@ -35,7 +35,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
 
   useEffect(() => {
     // Fetch featured lessons
-    fetch('/api/lessons')
+    fetch(`/api/lessons?active_lang=${lang}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.lessons) {
@@ -185,7 +185,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
                       {t('tests.enterCodeTitle')}
                     </h3>
                     <p className="text-xs text-stone-500 dark:text-stone-400">
-                      Ustozingiz bergan kod bilan sinovni boshlang
+                      {t('tests.enterCodeSubtitle')}
                     </p>
                   </div>
                 </div>
@@ -193,7 +193,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
                 <form onSubmit={handleStartWithCode} className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-stone-600 dark:text-stone-400 mb-2">
-                      6 xonali unikal test kodi
+                      {t('tests.codeInputLabel')}
                     </label>
                     <div className="relative">
                       <input
@@ -201,13 +201,10 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
                         maxLength={6}
                         value={testCode}
                         onChange={e => setTestCode(e.target.value.toUpperCase())}
-                        placeholder="TEMUR1"
+                        placeholder="TR4K9Z"
                         className="w-full text-center text-2xl font-mono font-black tracking-widest px-4 py-3.5 rounded-xl border-2 border-amber-500/30 dark:border-amber-500/40 bg-white dark:bg-stone-950 text-amber-900 dark:text-amber-200 focus:outline-none focus:border-amber-600 shadow-inner uppercase"
                       />
                     </div>
-                    <p className="mt-2 text-[11px] text-stone-500 text-center">
-                      Misol uchun mavjud kodlar: <span className="font-mono font-bold text-amber-700 dark:text-amber-400">TEMUR1</span>, <span className="font-mono font-bold text-amber-700 dark:text-amber-400">IPAK99</span>, <span className="font-mono font-bold text-amber-700 dark:text-amber-400">TARIX7</span>
-                    </p>
                   </div>
 
                   <button
@@ -223,7 +220,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
                 <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2.5">
                   <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
                   <span>
-                    Test natijalari va ballar serverda xolisona hisoblanadi. Vaqt yakunlanganda avtomatik yuboriladi.
+                    {t('tests.securityNotice')}
                   </span>
                 </div>
               </div>
@@ -300,17 +297,17 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
         <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10">
           <div>
             <span className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">
-              Ilmiy dastur
+              {t('home.curriculum')}
             </span>
             <h2 className="font-serif text-3xl font-black text-amber-950 dark:text-amber-100 mt-1">
-              Saralangan Darsliklar
+              {t('home.featuredLessons')}
             </h2>
           </div>
           <button
             onClick={() => navigate('/lessons')}
             className="inline-flex items-center gap-1.5 text-sm font-bold text-amber-700 dark:text-amber-400 hover:underline"
           >
-            <span>Barcha darslarni ko'rish</span>
+            <span>{t('home.viewAllLessons')}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -335,7 +332,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
               </div>
 
               <div className="pt-6 mt-6 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs font-bold text-amber-700 dark:text-amber-400">
-                <span>Darsni o'qish</span>
+                <span>{t('lessons.readLesson')}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
@@ -349,7 +346,7 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
           <div className="max-w-3xl space-y-6 relative z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold">
               <Award className="w-4 h-4" />
-              <span>Platforma Asoschisi va Muallifi</span>
+              <span>{t('brand.authorBadge')}</span>
             </div>
 
             <h2 className="font-serif text-3xl sm:text-4xl font-black text-amber-100">
@@ -357,17 +354,17 @@ export const Home: React.FC<HomeProps> = ({ navigate }) => {
             </h2>
 
             <p className="text-amber-100/90 text-base sm:text-lg leading-relaxed font-sans">
-              "Tarix — bu shunchaki o'tgan yillar va sanalar ro'yxati emas. Bu ajdodlarimizning xatolari, g'alabalari, madaniyati va ruhiyati ifodasidir. Ushbu platforma har bir talabaga tariximizni zerikarli yodlashdan xalos bo'lib, chin dildan his qilish va teran tushunish imkonini beradi."
+              {t('brand.authorQuote')}
             </p>
 
             <div className="pt-4 flex flex-wrap items-center gap-4 text-xs sm:text-sm font-semibold text-amber-200">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-amber-400" />
-                <span>Akademik manbalar asosida tuzilgan darslar</span>
+                <span>{t('brand.authorPoint1')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-amber-400" />
-                <span>Interaktiv testlar va xolis baholash</span>
+                <span>{t('brand.authorPoint2')}</span>
               </div>
             </div>
           </div>

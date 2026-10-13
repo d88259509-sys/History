@@ -21,7 +21,7 @@ interface LessonsProps {
 }
 
 export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
-  const { t } = useI18n();
+  const { lang, t } = useI18n();
   const { user, isTeacher } = useAuth();
 
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -36,6 +36,16 @@ export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const translateCategory = (cat: string) => {
+    if (!cat) return '';
+    if (cat.includes('Qadimgi') || cat.includes('Древн') || cat.includes('Ancient')) return t('categories.ancient');
+    if (cat.includes("O'rta") || cat.includes('Orta') || cat.includes('Средн') || cat.includes('Middle')) return t('categories.middleAges');
+    if (cat.includes('Yangi Davr') || cat.includes('Нового') || cat.includes('Modern')) return t('categories.modern');
+    if (cat.includes('Eng Yangi') || cat.includes('Новейш') || cat.includes('Contemporary')) return t('categories.contemporary');
+    if (cat.includes("O'zbekiston") || cat.includes('Узбекистан') || cat.includes('Uzbekistan')) return t('categories.uzbekistan');
+    return cat;
+  };
+
   const fetchLessons = async () => {
     setIsLoading(true);
     try {
@@ -44,6 +54,7 @@ export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
       if (selectedCategory !== 'all') params.set('category', selectedCategory);
       if (selectedLanguage !== 'all') params.set('language', selectedLanguage);
       if (searchTerm.trim()) params.set('search', searchTerm.trim());
+      params.set('active_lang', lang);
 
       const res = await fetch(`/api/lessons?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -65,7 +76,7 @@ export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
 
   useEffect(() => {
     fetchLessons();
-  }, [selectedCategory, selectedLanguage]);
+  }, [selectedCategory, selectedLanguage, lang]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +159,7 @@ export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
             <option value="all">{t('lessons.allCategories')}</option>
             {categories.map(cat => (
               <option key={cat} value={cat}>
-                {cat}
+                {translateCategory(cat)}
               </option>
             ))}
           </select>
@@ -181,7 +192,6 @@ export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
           <h3 className="font-serif text-xl font-bold text-stone-800 dark:text-stone-200">
             {t('lessons.empty')}
           </h3>
-          <p className="text-sm text-stone-500">Qidiruv yoki filtrlash shartlarini o'zgartirib ko'ring.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -194,7 +204,7 @@ export const Lessons: React.FC<LessonsProps> = ({ navigate }) => {
               {/* Order indicator */}
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400">
-                  {lesson.category}
+                  {translateCategory(lesson.category)}
                 </span>
 
                 {user && (

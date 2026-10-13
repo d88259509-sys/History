@@ -379,7 +379,7 @@ export const TakeTest: React.FC<TakeTestProps> = ({ code, navigate }) => {
             className="px-4 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold text-sm hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1.5 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Oldingi</span>
+            <span>{t('common.previous')}</span>
           </button>
 
           {isLastQuestion ? (
@@ -398,7 +398,7 @@ export const TakeTest: React.FC<TakeTestProps> = ({ code, navigate }) => {
               onClick={() => setCurrentIndex(prev => Math.min(questions.length - 1, prev + 1))}
               className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-sm shadow-md flex items-center gap-1.5 transition-all"
             >
-              <span>Keyingi</span>
+              <span>{t('common.next')}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           )}
